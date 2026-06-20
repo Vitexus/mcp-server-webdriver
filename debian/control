@@ -1,0 +1,29 @@
+Source: mcp-server-webdriver
+Section: python
+Priority: optional
+Maintainer: Vítězslav Dvořák <info@vitexsoftware.cz>
+Build-Depends: debhelper-compat (= 13),
+               dh-python,
+               pybuild-plugin-pyproject,
+               python3-all,
+               python3-hatchling
+Standards-Version: 4.6.2
+Homepage: https://github.com/Vitexus/mcp-server-webdriver
+Vcs-Git: https://github.com/Vitexus/mcp-server-webdriver.git
+Vcs-Browser: https://github.com/Vitexus/mcp-server-webdriver
+
+Package: python3-mcp-server-webdriver
+Architecture: all
+Depends: ${misc:Depends},
+         ${python3:Depends},
+         python3-fastmcp,
+         python3-selenium,
+         gecko-driver
+Description: MCP Server for AI-assisted web development via Selenium WebDriver
+ Provides an MCP (Model Context Protocol) server that gives AI agents direct
+ access to browser DevTools information — JavaScript errors, console output,
+ failed network resources (CSS, JS, fonts, images) and layout screenshots —
+ eliminating the need to manually copy-paste from the browser DevTools panel.
+ .
+ Uses the W3C WebDriver BiDi protocol via Firefox + geckodriver.
+ gecko-driver is provided by the VitexSoftware APT repository.

@@ -1,0 +1,8 @@
+mcp-server-webdriver (0.3.0-1) UNRELEASED; urgency=low
+
+  * Initial Debian packaging
+  * WebDriver BiDi support for JS errors, console, network monitoring
+  * DevTools diagnostic tools for AI-assisted web development
+  * gecko-driver from repo.vitexsoftware.com as default geckodriver source
+
+ -- Vítězslav Dvořák <info@vitexsoftware.cz>  Sat, 20 Jun 2026 08:35:42 +0000
