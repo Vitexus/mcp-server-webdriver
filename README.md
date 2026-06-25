@@ -396,6 +396,16 @@ pytest tests/
 
 ---
 
+## Related MCP Servers by VitexSoftware
+
+| Server | Description |
+|---|---|
+| [abraflexi-mcp-server](https://github.com/VitexSoftware/abraflexi-mcp-server) | AbraFlexi accounting/ERP integration — invoices, contacts, products, bank transactions |
+| [mastodon-mcp-server](https://github.com/VitexSoftware/mastodon-mcp-server) | Mastodon integration — timelines, posting, account management, search |
+| [semaphore-mcp-server](https://github.com/VitexSoftware/semaphore-mcp-server) | Semaphore UI integration — manage Ansible, Terraform and other automation workflows |
+
+---
+
 ## License
 
 MIT
