@@ -1,4 +1,4 @@
-.TH MCP\-SERVER\-WEBDRIVER 1 "2026-06-25" "0.5.2" "User Commands"
+.TH MCP\-SERVER\-WEBDRIVER 1 "2026-06-25" "0.6.0" "User Commands"
 .SH NAME
 mcp\-server\-webdriver \- MCP server for AI\-assisted browser automation via Selenium WebDriver
 .SH SYNOPSIS
@@ -46,7 +46,7 @@ If both \fB\-\-profile\fR and \fB\-P\fR are given, \fB\-\-profile\fR takes prece
 .BR \-h ", " \-\-help
 Print a summary of usage and available tools, then exit.
 .SH TOOLS
-The server exposes 37 MCP tools grouped by category.
+The server exposes 38 MCP tools grouped by category.
 .SS Session management
 .TP
 .B browser_open
@@ -56,13 +56,23 @@ Bare hostnames (e.g. \fIexample.com\fR) are accepted; \fBhttps://\fR is prepende
 automatically.
 Accepts \fIheadless\fR (default true), \fIenable_bidi\fR (default true),
 \fIgeckodriver_log\fR, and \fIfirefox_binary\fR parameters.
+Pass \fIwidth\fR and \fIheight\fR (in pixels) to start the session at a specific
+viewport size for responsive testing (e.g. width=390 height=844 for iPhone 14).
+Pass \fIuser_agent\fR to override the browser User\-Agent string so that
+UA\-sniffing sites serve their mobile layout.
 .TP
 .B browser_close
 Close the browser session and discard all buffered DevTools data.
 .TP
 .B browser_status
-Return session state, geckodriver source/version, BiDi status, and
-buffer counts as JSON.
+Return session state, geckodriver source/version, BiDi status,
+current viewport size, and buffer counts as JSON.
+.TP
+.B browser_set_viewport
+Resize the browser viewport to a given \fIwidth\fR×\fIheight\fR (pixels).
+Can be called at any point during a session to switch between breakpoints.
+Common presets: 390×844 (iPhone 14), 375×667 (iPhone SE),
+360×800 (Samsung Galaxy S21), 768×1024 (iPad), 1280×800 (laptop).
 .SS Navigation
 .TP
 .B browser_navigate
@@ -355,7 +365,8 @@ Install geckodriver from the VitexSoftware repository:
 .PP
 .RS
 .EX
-echo "deb http://repo.vitexsoftware.com trixie main" \\
+sudo curl \-fsSL http://repo.vitexsoftware.com/KEY.gpg \-o /usr/share/keyrings/vitexsoftware\-archive\-keyring.gpg
+echo "deb [signed\-by=/usr/share/keyrings/vitexsoftware\-archive\-keyring.gpg] http://repo.vitexsoftware.com trixie main" \\
   | sudo tee /etc/apt/sources.list.d/vitexsoftware.list
 sudo apt update && sudo apt install gecko\-driver
 .EE

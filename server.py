@@ -25,7 +25,8 @@ geckodriver resolution (first match wins):
   3. webdriver-manager auto-download  (if GECKODRIVER_AUTO_INSTALL != false)
 
 Install geckodriver:
-  echo "deb http://repo.vitexsoftware.com trixie main" \\
+  sudo curl -fsSL http://repo.vitexsoftware.com/KEY.gpg -o /usr/share/keyrings/vitexsoftware-archive-keyring.gpg
+  echo "deb [signed-by=/usr/share/keyrings/vitexsoftware-archive-keyring.gpg] http://repo.vitexsoftware.com trixie main" \\
     | sudo tee /etc/apt/sources.list.d/vitexsoftware.list
   sudo apt update && sudo apt install gecko-driver
 """
@@ -438,6 +439,9 @@ class BrowserState:
         enable_bidi: bool = True,
         geckodriver_log: str | None = None,
         firefox_binary: str | None = None,
+        width: int = 0,
+        height: int = 0,
+        user_agent: str = "",
     ) -> None:
         if self.driver is not None:
             return
@@ -448,6 +452,8 @@ class BrowserState:
             opts.add_argument("-headless")
         if enable_bidi:
             opts.enable_bidi = True
+        if user_agent:
+            opts.set_preference("general.useragent.override", user_agent)
 
         binary = firefox_binary or os.environ.get(_ENV_FIREFOX_BINARY, "").strip()
         if binary:
@@ -470,6 +476,8 @@ class BrowserState:
             svc_kw["log_output"] = geckodriver_log
 
         self.driver = webdriver.Firefox(service=FirefoxService(**svc_kw), options=opts)
+        if width and height:
+            self.driver.set_window_size(width, height)
         self.headless = headless
         if enable_bidi:
             self._attach_bidi()
@@ -582,6 +590,15 @@ async def browser_open(
     ] = True,
     geckodriver_log: Annotated[str, "Optional file path for geckodriver log"] = "",
     firefox_binary:  Annotated[str, "Optional path to a custom Firefox binary"] = "",
+    width:  Annotated[int, "Viewport width in pixels. 0 = browser default. E.g. 390 for iPhone 14."] = 0,
+    height: Annotated[int, "Viewport height in pixels. 0 = browser default. E.g. 844 for iPhone 14."] = 0,
+    user_agent: Annotated[
+        str,
+        "Override the browser User-Agent string. Useful for mobile emulation so "
+        "sites that sniff the UA serve their mobile layout. "
+        "E.g. 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
+        "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'",
+    ] = "",
     ctx: Context = None,
 ) -> str:
     """
@@ -591,6 +608,13 @@ async def browser_open(
     • All JavaScript exceptions (file, line, column, stack trace)
     • All console.* output (log / warn / error / info / debug)
     • All network requests with status codes and durations
+
+    To test responsive / mobile layouts pass width + height (and optionally user_agent):
+      width=390  height=844   — iPhone 14
+      width=375  height=667   — iPhone SE
+      width=360  height=800   — Samsung Galaxy S21
+      width=768  height=1024  — iPad
+      width=1280 height=800   — laptop
 
     geckodriver sources (priority order):
       1. GECKODRIVER_PATH env  →  2. apt install gecko-driver  →  3. webdriver-manager
@@ -602,6 +626,9 @@ async def browser_open(
         enable_bidi=enable_bidi,
         geckodriver_log=geckodriver_log or None,
         firefox_binary=firefox_binary or None,
+        width=width,
+        height=height,
+        user_agent=user_agent,
     )
     try:
         state.get_driver().get(url)
@@ -613,7 +640,8 @@ async def browser_open(
         if state.bidi_enabled else
         " | BiDi unavailable — DevTools capture disabled"
     )
-    return f"Opened: {url}{bidi_note}"
+    viewport_note = f" | viewport: {width}×{height}" if width and height else ""
+    return f"Opened: {url}{viewport_note}{bidi_note}"
 
 
 @mcp.tool(annotations={"readOnlyHint": False})
@@ -645,7 +673,32 @@ async def browser_status(ctx: Context = None) -> dict:
     if state.driver is not None:
         info["current_url"]   = state.driver.current_url
         info["current_title"] = state.driver.title
+        size = state.driver.get_window_size()
+        info["viewport"] = {"width": size["width"], "height": size["height"]}
     return info
+
+
+@mcp.tool(annotations={"readOnlyHint": False})
+async def browser_set_viewport(
+    width:  Annotated[int, "Viewport width in pixels"],
+    height: Annotated[int, "Viewport height in pixels"],
+    ctx: Context = None,
+) -> str:
+    """
+    Resize the browser viewport to test responsive / mobile layouts.
+
+    Call this at any point during a session to switch between breakpoints.
+
+    Common presets:
+      390×844   — iPhone 14
+      375×667   — iPhone SE
+      360×800   — Samsung Galaxy S21
+      768×1024  — iPad
+      1280×800  — laptop
+      1920×1080 — desktop full-HD
+    """
+    _st(ctx).get_driver().set_window_size(width, height)
+    return f"Viewport set to {width}×{height}."
 
 
 # ===========================================================================
@@ -992,6 +1045,60 @@ return result;
     return _st(ctx).get_driver().execute_script(js, prefix) or {}
 
 
+@mcp.tool(annotations={"readOnlyHint": True})
+async def devtools_performance(
+    include_resources: Annotated[
+        bool,
+        "Include per-resource timing entries (stylesheets, scripts, images…). "
+        "Can be large on busy pages.",
+    ] = False,
+    ctx: Context = None,
+) -> dict:
+    """
+    Return page performance timing from the browser Navigation Timing API.
+
+    navigation — key milestones for the current page load:
+      ttfb_ms        — Time to First Byte (server latency)
+      dom_loaded_ms  — DOMContentLoaded (page parsed, defer scripts done)
+      load_ms        — full load event (all resources fetched)
+      dns_ms         — DNS lookup duration
+      connect_ms     — TCP/TLS connection duration
+      request_ms     — time from request sent to last response byte
+      transfer_size  — response body size in bytes
+
+    resources (when include_resources=True) — per-asset breakdown:
+      name, type, duration_ms, transfer_size, start_time
+
+    Use this to identify slow pages, expensive assets, or server latency.
+    Complements devtools_network_all which captures requests via BiDi listeners.
+    """
+    js = """
+const t = performance.getEntriesByType('navigation')[0] || {};
+const nav = {
+  ttfb_ms:       Math.round((t.responseStart  - t.requestStart)       || 0),
+  dom_loaded_ms: Math.round((t.domContentLoadedEventEnd - t.startTime) || 0),
+  load_ms:       Math.round((t.loadEventEnd   - t.startTime)           || 0),
+  dns_ms:        Math.round((t.domainLookupEnd - t.domainLookupStart)  || 0),
+  connect_ms:    Math.round((t.connectEnd      - t.connectStart)       || 0),
+  request_ms:    Math.round((t.responseEnd     - t.requestStart)       || 0),
+  transfer_size: t.transferSize || 0,
+  url: t.name || location.href,
+};
+const result = { navigation: nav };
+if (arguments[0]) {
+  result.resources = performance.getEntriesByType('resource').map(r => ({
+    name:          r.name,
+    type:          r.initiatorType,
+    duration_ms:   Math.round(r.duration),
+    transfer_size: r.transferSize || 0,
+    start_ms:      Math.round(r.startTime),
+  }));
+}
+return result;
+"""
+    return _st(ctx).get_driver().execute_script(js, include_resources)
+
+
 # ===========================================================================
 # STANDARD BROWSER INTERACTION
 # ===========================================================================
@@ -1079,6 +1186,35 @@ async def browser_fill(
         raise RuntimeError(f"Element not found: {selector!r}")
     except WebDriverException as exc:
         raise RuntimeError(f"Fill failed: {exc}") from exc
+
+
+@mcp.tool(annotations={"readOnlyHint": False})
+async def browser_upload_file(
+    selector: Annotated[str, "CSS selector of the <input type='file'> element"],
+    path:     Annotated[str, "Absolute path to the local file to upload"],
+    ctx: Context = None,
+) -> str:
+    """
+    Upload a local file through a <input type="file"> element.
+
+    Works even when the file input is visually hidden (the common pattern of
+    hiding the native input and styling a custom button over it).
+    The file must exist on the machine running the MCP server.
+    """
+    driver = _st(ctx).get_driver()
+    if not os.path.isfile(path):
+        raise RuntimeError(f"File not found: {path!r}")
+    try:
+        el = driver.find_element(By.CSS_SELECTOR, selector)
+        driver.execute_script(
+            "arguments[0].style.display='block'; arguments[0].style.visibility='visible';", el
+        )
+        el.send_keys(path)
+        return f"Uploaded {path!r} via {selector!r}."
+    except NoSuchElementException:
+        raise RuntimeError(f"Element not found: {selector!r}")
+    except WebDriverException as exc:
+        raise RuntimeError(f"Upload failed: {exc}") from exc
 
 
 @mcp.tool(annotations={"readOnlyHint": False})
@@ -1400,6 +1536,71 @@ async def browser_set_cookie(
     return f"Set cookie {name!r}."
 
 
+@mcp.tool(annotations={"readOnlyHint": True})
+async def browser_get_storage(
+    storage: Annotated[str, "'local' for localStorage (default) or 'session' for sessionStorage"] = "local",
+    key:     Annotated[str, "Specific key to read. Empty = return all entries as a dict."] = "",
+    ctx: Context = None,
+) -> dict:
+    """
+    Read from localStorage or sessionStorage.
+
+    Returns all key→value pairs when no key is given, or {key: value}
+    for a single key (value is null if the key does not exist).
+
+    Useful for inspecting auth tokens, cached API responses, feature flags,
+    or any client-side state stored in web storage rather than cookies.
+    """
+    driver = _st(ctx).get_driver()
+    store = "sessionStorage" if storage.lower().startswith("s") else "localStorage"
+    if key:
+        val = driver.execute_script(f"return {store}.getItem(arguments[0]);", key)
+        return {key: val}
+    js = f"""
+const s = {store}, out = {{}};
+for (let i = 0; i < s.length; i++) {{ const k = s.key(i); out[k] = s.getItem(k); }}
+return out;
+"""
+    return driver.execute_script(js) or {}
+
+
+@mcp.tool(annotations={"readOnlyHint": False})
+async def browser_set_storage(
+    key:     Annotated[str, "Storage key"],
+    value:   Annotated[str, "Value to store"],
+    storage: Annotated[str, "'local' for localStorage (default) or 'session' for sessionStorage"] = "local",
+    ctx: Context = None,
+) -> str:
+    """
+    Write a key→value pair to localStorage or sessionStorage.
+
+    Useful for injecting auth tokens, feature flags, or test fixtures
+    directly into web storage without going through a login or setup flow.
+    """
+    driver = _st(ctx).get_driver()
+    store = "sessionStorage" if storage.lower().startswith("s") else "localStorage"
+    driver.execute_script(f"{store}.setItem(arguments[0], arguments[1]);", key, value)
+    return f"Set {store}[{key!r}]."
+
+
+@mcp.tool(annotations={"readOnlyHint": False})
+async def browser_clear_storage(
+    storage: Annotated[str, "'local' for localStorage (default) or 'session' for sessionStorage"] = "local",
+    key:     Annotated[str, "Specific key to remove. Empty = clear all entries."] = "",
+    ctx: Context = None,
+) -> str:
+    """
+    Remove one key or clear all entries from localStorage or sessionStorage.
+    """
+    driver = _st(ctx).get_driver()
+    store = "sessionStorage" if storage.lower().startswith("s") else "localStorage"
+    if key:
+        driver.execute_script(f"{store}.removeItem(arguments[0]);", key)
+        return f"Removed {store}[{key!r}]."
+    driver.execute_script(f"{store}.clear();")
+    return f"Cleared {store}."
+
+
 # ===========================================================================
 
 _HELP = """\
@@ -1422,11 +1623,12 @@ DESCRIPTION
   Communication is over stdin/stdout using the MCP protocol (JSON-RPC).
   Add it to your MCP client config and it will be launched automatically.
 
-TOOLS (37)
+TOOLS (43)
   Session management:
     browser_open            Open Firefox (URL optional, default about:blank)
     browser_close           Close the browser session
     browser_status          Show session state and geckodriver info
+    browser_set_viewport    Resize viewport (width×height) for responsive testing
 
   Navigation & interaction:
     browser_navigate        Navigate to a URL (bare hostnames get https://)
@@ -1435,6 +1637,7 @@ TOOLS (37)
     browser_screenshot      Capture a full-page or element screenshot
     browser_click           Click an element (CSS selector)
     browser_fill            Type text into an input (clears first by default)
+    browser_upload_file     Upload a local file via <input type="file">
     browser_select          Choose a <select> option
     browser_execute_js      Run JavaScript — returns JSON
     browser_wait            Wait for visible/clickable/present/text:<str>
@@ -1457,6 +1660,11 @@ TOOLS (37)
     browser_get_cookies     Read all cookies for the current page
     browser_set_cookie      Inject a cookie (auth, session tokens)
 
+  Web storage:
+    browser_get_storage     Read localStorage / sessionStorage (all or one key)
+    browser_set_storage     Write a key→value to localStorage / sessionStorage
+    browser_clear_storage   Remove one key or clear all localStorage / sessionStorage
+
   DevTools (require BiDi — Firefox + geckodriver ≥ 0.34):
     devtools_report         Full diagnostics: JS errors + console + network
     devtools_js_errors      JavaScript exceptions only
@@ -1468,6 +1676,7 @@ TOOLS (37)
     devtools_computed_css   Computed CSS properties of an element
     devtools_element_info   Outer HTML of an element
     devtools_css_variables  CSS custom properties (--var) in scope
+    devtools_performance    Navigation timing + optional per-resource breakdown
 
 ENVIRONMENT VARIABLES
   GECKODRIVER_PATH          Absolute path to geckodriver binary
@@ -1482,7 +1691,8 @@ GECKODRIVER RESOLUTION (first match wins)
   3. webdriver-manager auto-download (if GECKODRIVER_AUTO_INSTALL != false)
 
 INSTALL GECKODRIVER (Debian/Ubuntu)
-  echo "deb {repo} trixie main" | sudo tee /etc/apt/sources.list.d/vitexsoftware.list
+  sudo curl -fsSL {repo}/KEY.gpg -o /usr/share/keyrings/vitexsoftware-archive-keyring.gpg
+  echo "deb [signed-by=/usr/share/keyrings/vitexsoftware-archive-keyring.gpg] {repo} trixie main" | sudo tee /etc/apt/sources.list.d/vitexsoftware.list
   sudo apt update && sudo apt install gecko-driver
 
 MCP CLIENT CONFIG EXAMPLE (claude_desktop_config.json)

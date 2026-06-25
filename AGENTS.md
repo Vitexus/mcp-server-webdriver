@@ -1,4 +1,4 @@
-# CLAUDE.md
+# AGENTS.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -20,6 +20,15 @@ pip install -e ".[dev]"
 
 # Run the server (normally launched by MCP client, not by hand):
 mcp-server-webdriver --help
+```
+
+## Installation (VitexSoftware APT repository)
+
+```bash
+sudo curl -fsSL http://repo.vitexsoftware.com/KEY.gpg -o /usr/share/keyrings/vitexsoftware-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/vitexsoftware-archive-keyring.gpg] http://repo.vitexsoftware.com trixie main" \
+  | sudo tee /etc/apt/sources.list.d/vitexsoftware.list
+sudo apt update && sudo apt install python3-mcp-server-webdriver
 ```
 
 ## Architecture
@@ -49,16 +58,17 @@ The entire server is a single file: `server.py`. There are no submodules.
 2. `shutil.which("geckodriver")` — system PATH
 3. `webdriver_manager.firefox.GeckoDriverManager().install()` — auto-download (disabled by `GECKODRIVER_AUTO_INSTALL=false`)
 
-### Tool categories
+### Tool categories (43 total)
 
-- **Session**: `browser_open`, `browser_close`, `browser_status`
+- **Session**: `browser_open` (accepts `width`, `height`, `user_agent` for mobile emulation), `browser_close`, `browser_status`, `browser_set_viewport`
 - **Navigation**: `browser_navigate`, `browser_back`, `browser_forward`, `browser_refresh`
-- **Interaction**: `browser_click`, `browser_fill`, `browser_select`, `browser_execute_js`, `browser_wait`, `browser_scroll`, `browser_press_key`, `browser_hover`, `browser_switch_frame`
+- **Interaction**: `browser_click`, `browser_fill`, `browser_upload_file`, `browser_select`, `browser_execute_js`, `browser_wait`, `browser_scroll`, `browser_press_key`, `browser_hover`, `browser_switch_frame`
 - **Inspection**: `browser_screenshot`, `browser_get_title`, `browser_get_url`, `browser_get_source`, `browser_get_text`, `browser_get_attribute`, `browser_find_elements`
 - **Dialogs & cookies**: `browser_accept_dialog`, `browser_dismiss_dialog`, `browser_get_cookies`, `browser_set_cookie`
-- **DevTools** (require BiDi): `devtools_report`, `devtools_js_errors`, `devtools_console`, `devtools_network_failed`, `devtools_network_all`, `devtools_clear`, `devtools_enable_bidi`, `devtools_computed_css`, `devtools_element_info`, `devtools_css_variables`
+- **Web storage**: `browser_get_storage`, `browser_set_storage`, `browser_clear_storage`
+- **DevTools** (require BiDi): `devtools_report`, `devtools_js_errors`, `devtools_console`, `devtools_network_failed`, `devtools_network_all`, `devtools_clear`, `devtools_enable_bidi`, `devtools_computed_css`, `devtools_element_info`, `devtools_css_variables`, `devtools_performance`
 
-All DevTools tools guard with `if not state.bidi_enabled: raise RuntimeError(...)`.
+All DevTools tools guard with `if not state.bidi_enabled: raise RuntimeError(...)`. `devtools_performance` is the exception — it uses the browser's Navigation Timing API via `execute_script` and does not require BiDi.
 
 ### Tests
 

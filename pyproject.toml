@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcp-server-webdriver"
-version = "0.5.2"
+version = "0.6.0"
 description = "MCP Server for browser automation via Selenium WebDriver + geckodriver (Firefox)"
 readme = "README.md"
 license = { text = "MIT" }

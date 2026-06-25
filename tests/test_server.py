@@ -213,21 +213,23 @@ class TestToolCount:
         tools = [t.name for t in asyncio.run(srv.mcp.list_tools())]
         expected = {
             "browser_open", "browser_close", "browser_status",
+            "browser_set_viewport",
             "browser_navigate", "browser_back", "browser_forward",
             "browser_refresh", "browser_screenshot",
-            "browser_click", "browser_fill", "browser_select",
+            "browser_click", "browser_fill", "browser_upload_file", "browser_select",
             "browser_execute_js", "browser_wait", "browser_switch_frame",
             "browser_scroll", "browser_press_key", "browser_hover",
             "browser_find_elements",
             "browser_accept_dialog", "browser_dismiss_dialog",
             "browser_get_cookies", "browser_set_cookie",
+            "browser_get_storage", "browser_set_storage", "browser_clear_storage",
             "browser_get_title", "browser_get_url", "browser_get_source",
             "browser_get_text", "browser_get_attribute",
             "devtools_report", "devtools_js_errors", "devtools_console",
             "devtools_network_failed", "devtools_network_all",
             "devtools_clear", "devtools_enable_bidi",
             "devtools_computed_css", "devtools_element_info",
-            "devtools_css_variables",
+            "devtools_css_variables", "devtools_performance",
         }
         assert set(tools) == expected
 

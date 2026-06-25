@@ -1,3 +1,15 @@
+mcp-server-webdriver (0.6.0-1) trixie; urgency=medium
+
+  * New tools: browser_set_viewport, browser_upload_file,
+    browser_get_storage, browser_set_storage, browser_clear_storage,
+    devtools_performance (43 tools total)
+  * browser_open: add width, height, user_agent params for mobile emulation
+  * browser_status: report current viewport size
+  * Update repo installation instructions to use signed-by GPG keyring
+  * Update AGENTS.md with full architecture guide
+
+ -- vitex <info@vitexsoftware.cz>  Wed, 25 Jun 2026 18:00:00 +0200
+
 mcp-server-webdriver (0.5.2-1) trixie; urgency=medium
 
   * Bump upstream version to 0.5.2

@@ -44,7 +44,8 @@ AI:   browser_open → browser_navigate("/cart")
 ### Recommended — Debian package from VitexSoftware repository
 
 ```bash
-echo "deb http://repo.vitexsoftware.com trixie main" \
+sudo curl -fsSL http://repo.vitexsoftware.com/KEY.gpg -o /usr/share/keyrings/vitexsoftware-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/vitexsoftware-archive-keyring.gpg] http://repo.vitexsoftware.com trixie main" \
   | sudo tee /etc/apt/sources.list.d/vitexsoftware.list
 sudo apt update
 sudo apt install python3-mcp-server-webdriver
@@ -252,9 +253,10 @@ Ask: *"Which resources on /shop are slowest to load?"*
 
 | Tool | Description |
 |---|---|
-| `browser_open` | Open Firefox (URL optional, default `about:blank`) |
+| `browser_open` | Open Firefox (URL optional, default `about:blank`); accepts `width`, `height`, `user_agent` for mobile emulation |
 | `browser_close` | Quit the browser session |
-| `browser_status` | Session state, geckodriver version, BiDi status, buffer counts |
+| `browser_status` | Session state, geckodriver version, BiDi status, current viewport size, buffer counts |
+| `browser_set_viewport` | Resize the viewport mid-session (e.g. 390×844 for iPhone 14) |
 
 ### Navigation
 
