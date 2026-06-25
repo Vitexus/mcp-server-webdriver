@@ -1,3 +1,10 @@
+mcp-server-webdriver (0.5.1-5) trixie; urgency=medium
+
+  * tests/conftest.py: skip TestToolCount when fastmcp is stubbed — the test
+    calls asyncio.run(mcp.list_tools()) which needs a real FastMCP object
+
+ -- Vítězslav Dvořák <info@vitexsoftware.cz>  Wed, 25 Jun 2026 14:20:00 +0200
+
 mcp-server-webdriver (0.5.1-4) trixie; urgency=medium
 
   * tests/conftest.py: stub fastmcp when not installed so unit tests run
