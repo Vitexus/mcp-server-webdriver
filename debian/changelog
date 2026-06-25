@@ -1,3 +1,10 @@
+mcp-server-webdriver (0.5.1-3) trixie; urgency=medium
+
+  * Add python3-fastmcp and python3-selenium to Build-Depends (fixes
+    ModuleNotFoundError during dh_auto_test: tests import server which needs fastmcp)
+
+ -- Vítězslav Dvořák <info@vitexsoftware.cz>  Wed, 25 Jun 2026 13:55:00 +0200
+
 mcp-server-webdriver (0.5.1-2) trixie; urgency=medium
 
   * Add python3-pytest to Build-Depends (fixes build failure: No module named pytest)
