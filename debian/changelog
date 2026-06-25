@@ -1,3 +1,10 @@
+mcp-server-webdriver (0.5.1-8) trixie; urgency=medium
+
+  * debian/Jenkinsfile: document reason for each commented-out
+    distribution
+
+ -- vitex <info@vitexsoftware.cz>  Thu, 25 Jun 2026 14:12:36 +0200
+
 mcp-server-webdriver (0.5.1-7) trixie; urgency=medium
 
   * debian/Jenkinsfile: drop debian:forky — python3-mcp not installable

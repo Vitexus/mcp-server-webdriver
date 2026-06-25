@@ -3,12 +3,12 @@
 // Current version of this Pipeline https://github.com/VitexSoftware/BuildImages/blob/main/Test/Jenkinsfile
 
 String[] distributions = [
-//                      'debian:bookworm',
+//                      'debian:bookworm',   // python3-fastmcp not packaged for bookworm
                         'debian:trixie',
-//                      'debian:forky',
-//                      'ubuntu:jammy',
-//                      'ubuntu:noble',
-//                      'ubuntu:resolute',
+//                      'debian:forky',      // python3-fastmcp → python3-mcp missing in VitexSoftware forky repo
+//                      'ubuntu:jammy',      // python3-fastmcp not packaged for jammy
+//                      'ubuntu:noble',      // python3-fastmcp not packaged for noble
+//                      'ubuntu:resolute',   // python3-fastmcp → python3-jsonref missing in VitexSoftware resolute repo
 ]
 
 String vendor = 'vitexsoftware'
