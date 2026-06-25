@@ -1,3 +1,16 @@
+mcp-server-webdriver (0.5.2-1) trixie; urgency=medium
+
+  * Bump upstream version to 0.5.2
+  * Add AGENTS.md with architecture guide and related MCP servers links
+  * README: add Related MCP Servers by VitexSoftware section
+  * Update SVG icon (teal/black redesign)
+  * Fix manpage: version, date, repo URL (Vitexus → VitexSoftware)
+  * CI: drop debian:forky and ubuntu:resolute (broken dep chains)
+  * deb: stub fastmcp in conftest.py; trim Build-Depends
+  * test: skip TestToolCount when fastmcp is stubbed in build env
+
+ -- vitex <info@vitexsoftware.cz>  Wed, 25 Jun 2026 17:00:00 +0200
+
 mcp-server-webdriver (0.5.1-8) trixie; urgency=medium
 
   * debian/Jenkinsfile: document reason for each commented-out
