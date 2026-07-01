@@ -54,6 +54,7 @@ try:
     from selenium.webdriver.common.action_chains import ActionChains
     from selenium.webdriver.firefox.options import Options as FirefoxOptions
     from selenium.webdriver.firefox.service import Service as FirefoxService
+    from selenium.webdriver.remote.remote_connection import RemoteConnection
     from selenium.webdriver.support.ui import WebDriverWait, Select
     from selenium.webdriver.support import expected_conditions as EC
     from selenium.common.exceptions import (
@@ -75,8 +76,16 @@ _ENV_AUTO_INSTALL       = "GECKODRIVER_AUTO_INSTALL"
 _ENV_FIREFOX_BINARY     = "FIREFOX_BINARY"
 _ENV_FIREFOX_PROFILE    = "FIREFOX_PROFILE"      # named profile (-P)
 _ENV_FIREFOX_PROFILE_DIR = "FIREFOX_PROFILE_DIR" # profile path (--profile)
+_ENV_COMMAND_TIMEOUT    = "WEBDRIVER_COMMAND_TIMEOUT"  # seconds, per HTTP command to geckodriver
 _REPO_URL             = "http://repo.vitexsoftware.com"
 _REPO_DISTRO          = "trixie"
+
+# Selenium's RemoteConnection defaults to no read/connect timeout at all
+# (socket._GLOBAL_DEFAULT_TIMEOUT), so a stalled geckodriver/Firefox command
+# (e.g. driver.title, driver.current_url) blocks the tool call forever with
+# no way for the caller to recover short of killing the process. Give every
+# command a hard ceiling instead.
+RemoteConnection.set_timeout(float(os.environ.get(_ENV_COMMAND_TIMEOUT, "60")))
 _REPO_PKG             = "gecko-driver"
 
 # Resources considered "slow" by default (ms)
