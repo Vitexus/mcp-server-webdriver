@@ -20,6 +20,8 @@ Architecture: all
 Depends: ${misc:Depends},
          ${python3:Depends},
          python3-fastmcp,
+         python3-pydantic,
+         python3-typing-inspection,
          python3-selenium,
          gecko-driver
 Description: MCP Server for AI-assisted web development via Selenium WebDriver

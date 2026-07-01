@@ -1,3 +1,10 @@
+mcp-server-webdriver (0.6.0-2) trixie; urgency=medium
+
+  * Add python3-pydantic, python3-typing-inspection to Depends (fixes
+    missing typing_inspection module at runtime)
+
+ -- vitex <info@vitexsoftware.cz>  Wed, 01 Jul 2026 09:27:52 +0200
+
 mcp-server-webdriver (0.6.0-1) trixie; urgency=medium
 
   * New tools: browser_set_viewport, browser_upload_file,
