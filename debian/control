@@ -14,7 +14,8 @@ Homepage: https://github.com/Vitexus/mcp-server-webdriver
 Vcs-Git: https://github.com/Vitexus/mcp-server-webdriver.git
 Vcs-Browser: https://github.com/Vitexus/mcp-server-webdriver
 
-Package: python3-mcp-server-webdriver
+Package: mcp-server-webdriver
+Replaces: python3-mcp-server-webdriver
 Architecture: all
 Depends: ${misc:Depends},
          ${python3:Depends},
