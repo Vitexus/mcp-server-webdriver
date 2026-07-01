@@ -1442,7 +1442,6 @@ async def browser_find_elements(
     result = []
     for i, el in enumerate(elements):
         try:
-            cs = driver.execute_script("return window.getComputedStyle(arguments[0]);", el)
             visible = el.is_displayed()
         except WebDriverException:
             visible = False
